@@ -48,7 +48,20 @@ class Optimizer(ABC):
     @abstractmethod
     def _optimize(self, *args, **kwargs) -> tuple[np.ndarray,
                                                   np.ndarray,
-                                                  dict | None]: ...
+                                                  dict | None]:
+        """Runs the optimization process and returns
+        the best fitness, best solution and possibly more
+        information.
+
+        Returns:
+            (best_fitness, best_solution, extras)
+        """
 
     @abstractmethod
-    def configuration(self) -> dict: ...
+    def parameters(self) -> dict:
+        """Optimizer parameters.
+
+        Returns:
+            dictionary with the optimizer
+                parameters.
+        """
