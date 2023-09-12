@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "decc"
+version = "0.0.0"
+readme = "README.md"
+description = "Cooperative Co-evolutionary Differential Evolution algorithms in Python."
+
+keywords = ["decc"]
+requires-python = ">=3.8"
+
+classifiers = [
+    "Development Status :: Stable",
+    "Intended Audience :: Developers",
+    "Natural Language :: Portuguese",
+    "Programming Language :: Python :: 3.8",
+]
+
+dependencies = [
+    "numpy>=1.23"
+]
+
+[project.urls]
+repository = "https://github.com/moesio-f/decc"
+
+[tool.setuptools.packages.find]
+where = ["src"]
