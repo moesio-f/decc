@@ -16,13 +16,13 @@ def dim_prob_crossover(population: np.ndarray,
     https://doi.org/10.1007/11539117_147 
 
     Args:
-        population (np.ndarray): _description_
-        mutated_population (np.ndarray): _description_
-        CR (float): _description_
-        seed (int): _description_
+        population (np.ndarray): population.
+        mutated_population (np.ndarray): mutated population.
+        CR (float): Crossover probability.
+        seed (int): random seed.
 
     Returns:
-        np.ndarray: _description_
+        np.ndarray: new population.
     """
     rng = np.random.default_rng(seed)
 

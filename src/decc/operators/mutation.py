@@ -34,16 +34,16 @@ def rand_individual_pertubation(population: np.ndarray,
 
     # Generating all parameters for the
     #   perturbation.
-    values = []
-    for _ in range(n):
-        values.append(rng.choice(population,
-                                 size=(3,),
-                                 replace=False,
-                                 axis=0))
-
-    # Converting the values to an array of shape
-    #   (n, 3)
-    parameters = np.stack(values)
+    # The idea is to generate a random matrix
+    #   with size (n, pop_size) and obtain the indices
+    #   that would yield the sorted array.
+    # From those indices, we can select only the first 3
+    #   and obtain the actual individuals to be used
+    #   as parameters for the mutation.
+    random_matrix = rng.random(size=(n, population.shape[0]))
+    random_indices = random_matrix.argsort(axis=1)
+    parameters_indices = random_indices[:,:3]
+    parameters = population[parameters_indices]
 
     # Extracting the values of each parameter
     #   in 3 arrays of shape (n, )
