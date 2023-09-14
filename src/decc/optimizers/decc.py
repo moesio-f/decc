@@ -2,7 +2,7 @@
 
 Reference
 ---------
-Shi, Yj., Teng, Hf., Li, Zq. (2005). 
+Shi, Yj., Teng, Hf., Li, Zq.
 Cooperative Co-evolutionary Differential Evolution 
     for Function Optimization (2005) 
 https://doi.org/10.1007/11539117_147
@@ -16,7 +16,7 @@ import numpy as np
 from decc import decomposition
 from decc.core import Optimizer
 from decc.core.problem import Problem
-from decc.operators import crossover, mutation
+from decc.utils import classic_de as de
 
 
 class DECCOptimizer(Optimizer):
@@ -66,6 +66,7 @@ class DECCOptimizer(Optimizer):
         rng = np.random.default_rng(self.seed)
         l, u = self.problem.bounds
         d = self.problem.dims
+        p = self.pop_size
         sp = self.subpop_size
         fn = self.problem.fn
         n_evaluations = 0
@@ -102,18 +103,21 @@ class DECCOptimizer(Optimizer):
             population = rng.uniform(l_, u_,
                                      size=(sp, len(indices)))
 
-            # Obtaining the complete representation
-            #   of the population using the context vector
-            context_population = self._individuals_from_decomposed(context_vector,
-                                                                   population,
-                                                                   indices)
+            # Update the population using the context (i. e.,
+            #   set the indices that won't be evolved to the
+            #   same value as the context)
+            # New shape (n_subpopulation, n_dims)
+            population = self._population_w_context(
+                context_vector,
+                population,
+                indices)
 
             # Obtaining the population fitness
-            population_fitness = fn(context_population)
+            population_fitness = fn(population)
             n_evaluations += sp
 
             # Calculating best
-            update_best(context_population, population_fitness)
+            update_best(population, population_fitness)
 
             # Storing the subpopulation and its fitness
             subpopulations.append(population)
@@ -122,11 +126,16 @@ class DECCOptimizer(Optimizer):
         # Evolution loop
         while n_evaluations <= self.max_fn:
             # Obtaining the new context vector
-            context_vector = np.concatenate([sp[spf.argmin()]
-                                             for sp, spf in zip(subpopulations,
-                                                                subpopulations_fitness)],
-                                            dtype=np.float32)
-            context_fitness = fn(np.expand_dims(context_vector, axis=0))
+            context_vector = np.zeros((d,),
+                                      dtype=np.float32)
+
+            for i, indices in enumerate(self.subproblem_indices):
+                best_idx = subpopulations_fitness[i].argmin()
+                context_vector[indices] = subpopulations[i][best_idx, indices]
+
+            # Evaluating the new fitness
+            context_fitness = fn(np.expand_dims(context_vector,
+                                                axis=0))
 
             # Updating best
             if context_fitness < best_fitness:
@@ -135,61 +144,60 @@ class DECCOptimizer(Optimizer):
 
             # Evolve each subpopulation
             for i, indices in enumerate(self.subproblem_indices):
-                # Obtaining current population information
-                current_fitness = subpopulations_fitness[i]
-                current_population = subpopulations[i]
+                # Obtaining current information
+                population = subpopulations[i]
+                fitness = subpopulations_fitness[i]
 
-                # Mutation
-                mutated_pop = mutation.rand_individual_pertubation(
-                    current_population,
-                    self.F,
-                    rng.integers(0, 99999))
+                # Obtaining the population to evolve by selecting
+                #   only the indices (dimensions) to be optimized
+                #   by DE.
+                evolvable_population = population[:, indices]
 
-                # Crossover
-                candidates = crossover.dim_prob_crossover(
-                    current_population,
-                    mutated_pop,
-                    self.CR,
-                    rng.integers(0, 99999))
+                # Creating a fitness function which
+                #   maps the evolvable population (contains
+                #   solutions with smaller dimension)
+                #   back to the actual population.
+                def _fn(pop: np.ndarray) -> np.ndarray:
+                    nonlocal population
+                    nonlocal indices
+                    nonlocal fn
+                    full_dims_pop = np.copy(population)
+                    full_dims_pop[:, indices] = pop
+                    return fn(full_dims_pop)
 
-                # Obtaining individuals using new
-                #   representative
-                context_candidates = self._individuals_from_decomposed(
-                    context_vector,
-                    candidates,
-                    indices
-                )
+                # Apply DE to obtain new population
+                pop, fitness, n = de.de_rand_1_exp(
+                    population=evolvable_population,
+                    fitness=fitness,
+                    F=self.F,
+                    CR=self.CR,
+                    fn=_fn,
+                    seed=rng.integers(0, 9999))
+                n_evaluations += n
 
-                # Candidate evaluation
-                candidates_fitness = fn(context_candidates)
-                n_evaluations += sp
+                # Update the actual population
+                population[:, indices] = pop
+                subpopulations[i] = population
+                subpopulations_fitness[i] = fitness
 
-                # Update population based on fitness
-                cond = candidates_fitness < current_fitness
-                cond_dims = np.repeat(np.expand_dims(cond, axis=-1),
-                                      candidates.shape[-1],
-                                      axis=-1)
-                subpopulations[i] = np.where(cond_dims,
-                                             candidates,
-                                             current_population)
-                subpopulations_fitness[i] = np.where(cond,
-                                                     candidates_fitness,
-                                                     current_fitness)
+                # Updating best
+                update_best(subpopulations[i],
+                            subpopulations_fitness[i])
 
         return best_fitness, best_solution, None
 
-    def _individuals_from_decomposed(self,
-                                     context: np.ndarray,
-                                     individuals: np.ndarray,
-                                     indices: np.ndarray) -> np.ndarray:
+    def _population_w_context(self,
+                              context: np.ndarray,
+                              population: np.ndarray,
+                              indices: np.ndarray) -> np.ndarray:
         # Create context matrix from
         #   context vector.
-        context_individuals = np.copy(np.broadcast_to(
+        context_population = np.copy(np.broadcast_to(
             context,
-            shape=(individuals.shape[0],
+            shape=(population.shape[0],
                    self.problem.dims)))
 
         # Update values in indices
-        context_individuals[:, indices] = individuals
+        context_population[:, indices] = population
 
-        return context_individuals
+        return context_population
