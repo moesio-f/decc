@@ -5,6 +5,28 @@ from __future__ import annotations
 import numpy as np
 
 
+def random_group_decompose(dims: int,
+                           n_groups: int,
+                           seed: int) -> list[np.ndarray]:
+    """Decompose the decisions variables into
+    random groups with approximately `group_dim` 
+    dimensions.
+
+    Args:
+        dims (int): total number of dimensions.
+        n_groups (int): number of groups to generate.
+            Each generated group has roughly 
+            dims / n_groups dimensions.
+        seed (int): random seed.
+
+    Returns:
+        list of arrays.
+    """
+    rng = np.random.default_rng(seed)
+    permutation = rng.permutation(dims)
+    splits = np.array_split(permutation, n_groups)
+    return splits
+
 def dimension_decompose(dims: int) -> np.ndarray:
     """Decompose the decisions variables into
     groups of size 1 for each dimension.

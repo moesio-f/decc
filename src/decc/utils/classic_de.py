@@ -8,7 +8,8 @@ from typing import Callable
 
 import numpy as np
 
-from decc.operators import crossover, mutation
+from decc.operators import crossover, mutation, selection
+
 
 def de_rand_1_exp(population: np.ndarray,
                   fitness: np.ndarray,
@@ -16,7 +17,10 @@ def de_rand_1_exp(population: np.ndarray,
                   CR: float,
                   fn: Callable[[np.ndarray], np.ndarray],
                   seed: int,
-                  max_fn: int | None = None) -> tuple[np.ndarray, np.ndarray, int]:
+                  max_fn: int | None = None,
+                  bounds: tuple | None = None) -> tuple[np.ndarray,
+                                                        np.ndarray,
+                                                        int]:
     """Applies a variant of DE known as DE/Rand/1/Exp, this implementation
     uses the description provided in: 
     Shi, Yj., Teng, Hf., Li, Zq.
@@ -54,7 +58,8 @@ def de_rand_1_exp(population: np.ndarray,
         mutated_pop = mutation.rand_individual_pertubation(
             population,
             F,
-            rng.integers(0, 99999))
+            rng.integers(0, 99999),
+            bounds=bounds)
 
         # Crossover
         candidates = crossover.dim_prob_crossover(
@@ -68,15 +73,10 @@ def de_rand_1_exp(population: np.ndarray,
         n_evaluations += candidates.shape[0]
 
         # Update population based on fitness
-        cond = candidates_fitness < fitness
-        cond_dims = np.repeat(np.expand_dims(cond, axis=-1),
-                              candidates.shape[-1],
-                              axis=-1)
-        population = np.where(cond_dims,
-                              candidates,
-                              population)
-        fitness = np.where(cond,
-                           candidates_fitness,
-                           fitness)
+        population, fitness = selection.best_fitness_selection(
+            population,
+            candidates,
+            fitness,
+            candidates_fitness)
 
     return population, fitness, n_evaluations

@@ -14,8 +14,7 @@ from typing import Literal
 import numpy as np
 
 from decc import decomposition
-from decc.core import Optimizer
-from decc.core.problem import Problem
+from decc.core import Optimizer, Problem
 from decc.utils import classic_de as de
 
 
@@ -147,6 +146,7 @@ class DECCOptimizer(Optimizer):
                 # Obtaining current information
                 population = subpopulations[i]
                 fitness = subpopulations_fitness[i]
+                l_, u_ = l[indices], u[indices]
 
                 # Obtaining the population to evolve by selecting
                 #   only the indices (dimensions) to be optimized
@@ -158,9 +158,6 @@ class DECCOptimizer(Optimizer):
                 #   solutions with smaller dimension)
                 #   back to the actual population.
                 def _fn(pop: np.ndarray) -> np.ndarray:
-                    nonlocal population
-                    nonlocal indices
-                    nonlocal fn
                     full_dims_pop = np.copy(population)
                     full_dims_pop[:, indices] = pop
                     return fn(full_dims_pop)
@@ -172,7 +169,8 @@ class DECCOptimizer(Optimizer):
                     F=self.F,
                     CR=self.CR,
                     fn=_fn,
-                    seed=rng.integers(0, 9999))
+                    seed=rng.integers(0, 9999),
+                    bounds=(l_, u_))
                 n_evaluations += n
 
                 # Update the actual population
@@ -184,7 +182,7 @@ class DECCOptimizer(Optimizer):
                 update_best(subpopulations[i],
                             subpopulations_fitness[i])
 
-        return best_fitness, best_solution, None
+        return best_fitness[0], best_solution, None
 
     def _population_w_context(self,
                               context: np.ndarray,
