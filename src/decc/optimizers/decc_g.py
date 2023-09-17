@@ -57,6 +57,9 @@ class DECCGOptimizer(Optimizer):
             'max_evaluations': self.max_fn,
             'n_subproblems': self.n_sub
         }
+    
+    def name(self) -> str:
+        return "DECC-G"
 
     def _optimize(self, *args, **kwargs) -> tuple[np.ndarray,
                                                   np.ndarray,

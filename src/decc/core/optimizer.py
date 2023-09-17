@@ -65,3 +65,14 @@ class Optimizer(ABC):
             dictionary with the optimizer
                 parameters.
         """
+
+    @abstractmethod
+    def name(self) -> str:
+        """Optimizer name.
+
+        Returns:
+            optimizer name.
+        """
+
+    def __str__(self) -> str:
+        return self.name()

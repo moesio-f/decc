@@ -55,6 +55,9 @@ class DECCOptimizer(Optimizer):
             'max_evaluations': self.max_fn,
             'n_subproblems': len(self.subproblem_indices)
         }
+    
+    def name(self) -> str:
+        return self.variant
 
     def _optimize(self, *args, **kwargs) -> tuple[np.ndarray,
                                                   np.ndarray,
@@ -87,7 +90,7 @@ class DECCOptimizer(Optimizer):
         context_fitness = fn(context_vector)
 
         # Updating variables
-        best_solution = context_vector[0]
+        best_solution = context_vector
         best_fitness = context_fitness
         n_evaluations += 1
 
