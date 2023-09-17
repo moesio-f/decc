@@ -25,7 +25,7 @@ dependencies = [
 ]
 
 [project.urls]
-repository = "https://github.com/moesio-f/decc"
+Github = "https://github.com/moesio-f/decc"
 
 [tool.setuptools.packages.find]
 where = ["src"]
