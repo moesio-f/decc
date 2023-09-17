@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "decc"
-version = "0.2.0"
+version = "0.2.1"
 readme = "README.md"
 description = "Cooperative Co-evolutionary Differential Evolution algorithms in Python."
 

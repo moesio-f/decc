@@ -174,6 +174,9 @@ class DECCGOptimizer(Optimizer):
                 # Updating with new weighted individuals
                 ind[:, g] = weights * sub_ind
 
+            # Clipping to bounds
+            ind = np.clip(ind, l, u)
+
             # Evaluating the weighted population
             return fn(ind)
 
