@@ -12,10 +12,12 @@ keywords = ["decc"]
 requires-python = ">=3.8"
 
 classifiers = [
-    "Development Status :: Stable",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "Natural Language :: Portuguese",
+    "Natural Language :: English",
     "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10"
 ]
 
 dependencies = [
