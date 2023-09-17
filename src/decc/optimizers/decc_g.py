@@ -210,6 +210,9 @@ class DECCGOptimizer(Optimizer):
             for i, g in enumerate(groups):
                 weighted_individual[g] = best_w[i] * population[idx, g]
 
+            # Clipping weighted individual
+            weighted_individual = np.clip(weighted_individual, l, u)
+
             # Update population in this idx
             population[idx] = weighted_individual
             population_fitness[idx] = best_w_f
