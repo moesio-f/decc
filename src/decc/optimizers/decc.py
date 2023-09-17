@@ -185,7 +185,7 @@ class DECCOptimizer(Optimizer):
                 update_best(subpopulations[i],
                             subpopulations_fitness[i])
 
-        return best_fitness[0], best_solution, None
+        return best_fitness.squeeze(), best_solution, None
 
     def _population_w_context(self,
                               context: np.ndarray,

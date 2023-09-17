@@ -223,4 +223,4 @@ class DECCGOptimizer(Optimizer):
         # Update best
         update_best(population, population_fitness)
 
-        return best_fitness, best_solution, None
+        return best_fitness.squeeze(), best_solution, None
