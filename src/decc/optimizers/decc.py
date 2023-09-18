@@ -27,13 +27,15 @@ class DECCOptimizer(Optimizer):
                  grouping: Literal['halve',
                                    'dims'] = 'halve',
                  F: float = 0.8,
-                 CR: float = 0.3) -> None:
+                 CR: float = 0.3,
+                 ensure_evaluations: bool = False) -> None:
         super().__init__(problem, seed)
         self.subpop_size = subpopulation_size
         self.F = F
         self.CR = CR
         self.max_fn = max_fn
         self.variant = 'DECC-'
+        self.ensure_evaluations = ensure_evaluations
 
         d = self.problem.dims
         if grouping == 'halve':
@@ -55,7 +57,7 @@ class DECCOptimizer(Optimizer):
             'max_evaluations': self.max_fn,
             'n_subproblems': len(self.subproblem_indices)
         }
-    
+
     def name(self) -> str:
         return self.variant
 
@@ -68,7 +70,6 @@ class DECCOptimizer(Optimizer):
         rng = np.random.default_rng(self.seed)
         l, u = self.problem.bounds
         d = self.problem.dims
-        p = self.pop_size
         sp = self.subpop_size
         fn = self.problem.fn
         n_evaluations = 0
@@ -125,8 +126,13 @@ class DECCOptimizer(Optimizer):
             subpopulations.append(population)
             subpopulations_fitness.append(population_fitness)
 
+            # Early stop
+            if self.ensure_evaluations and \
+                    n_evaluations >= self.max_fn:
+                break
+
         # Evolution loop
-        while n_evaluations <= self.max_fn:
+        while n_evaluations < self.max_fn:
             # Obtaining the new context vector
             context_vector = np.zeros((d,),
                                       dtype=np.float32)
@@ -185,7 +191,14 @@ class DECCOptimizer(Optimizer):
                 update_best(subpopulations[i],
                             subpopulations_fitness[i])
 
-        return best_fitness.squeeze(), best_solution, None
+                # Early stop
+                if self.ensure_evaluations and \
+                        n_evaluations >= self.max_fn:
+                    break
+
+        return (best_fitness.squeeze(),
+                best_solution,
+                dict(n_evaluations=n_evaluations))
 
     def _population_w_context(self,
                               context: np.ndarray,

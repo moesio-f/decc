@@ -30,7 +30,8 @@ class DECCGOptimizer(Optimizer):
                  max_fn: int = int(1e6),
                  F: float = 0.8,
                  CR: float = 0.3,
-                 weights_bound: tuple[float, float] = (-5, 5)) -> None:
+                 weights_bound: tuple[float, float] = (-5, 5),
+                 ensure_evaluations: bool = False) -> None:
         super().__init__(problem, seed)
         assert n_subproblems <= self.problem.dims
 
@@ -42,6 +43,7 @@ class DECCGOptimizer(Optimizer):
         self.de_eval = de_evaluations
         self.sansde_eval = sansde_evaluations
         self.w_bounds = weights_bound
+        self.ensure_evaluations = ensure_evaluations
 
     def parameters(self) -> dict:
         return {
@@ -57,7 +59,7 @@ class DECCGOptimizer(Optimizer):
             'max_evaluations': self.max_fn,
             'n_subproblems': self.n_sub
         }
-    
+
     def name(self) -> str:
         return "DECC-G"
 
@@ -73,8 +75,8 @@ class DECCGOptimizer(Optimizer):
         p = self.pop_size
         fn = self.problem.fn
         n_evaluations = 0
-        best_solution = None
-        best_fitness = None
+        best_solution: np.ndarray = None
+        best_fitness: np.ndarray = None
         seed_interval = (0, 99999)
 
         # Random initial population of
@@ -104,7 +106,7 @@ class DECCGOptimizer(Optimizer):
         # Update best
         update_best(population, population_fitness)
 
-        while n_evaluations <= self.max_fn:
+        while n_evaluations < self.max_fn:
             # Generating random groups
             group_seed = rng.integers(*seed_interval)
             groups = decomposition.random_group_decompose(
@@ -149,6 +151,11 @@ class DECCGOptimizer(Optimizer):
                 # Update best
                 update_best(population, population_fitness)
 
+                # Early stop
+                if self.ensure_evaluations and \
+                        n_evaluations >= self.max_fn:
+                    break
+
         # === Updating weight population ===
         def _fn(w_pop: np.ndarray,
                 idx: int):
@@ -183,6 +190,11 @@ class DECCGOptimizer(Optimizer):
         def _update_pop_w_weights(idx: int):
             nonlocal n_evaluations
             nonlocal population
+
+            # Early stop
+            if self.ensure_evaluations and \
+                    n_evaluations >= self.max_fn:
+                return
 
             # Obtain initial fitness of
             #   weighted individuals
@@ -229,4 +241,6 @@ class DECCGOptimizer(Optimizer):
         # Update best
         update_best(population, population_fitness)
 
-        return best_fitness.squeeze(), best_solution, None
+        return (best_fitness.squeeze(),
+                best_solution,
+                dict(n_evaluations=n_evaluations))
